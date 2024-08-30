@@ -1,0 +1,28 @@
+I've done some simulations of the photo-z accuracy for bursts with observed H=18 (AB) over a range of redshifts.   
+
+The conclusion is that the gri,zy,H filter choice is fine but has a degeneracy between low-z + large A_V and high-z, which can be side-stepped by also obsering in J if we have a potential z>6 burst.
+
+-Nat
+
+
+### details
+
+Since we're fitting 3+ parameters to 3 filters, it's necessary to either regularize the fitting or marginalize over a range of parameters.  I'm marginalizing.
+
+Attached are plots of the confusion matrices.  The first is assuming uniform priors on the power law slope alpha (range 0-1.5) and rest-frame A_V (range 0-5).  The second assumes a decreasing prior on the mean A_V with redshift.  In both plots, dotted lines show the 90% confidence intervals for the photo-z.
+
+At z=6, even A_V=1 creates 2.7 mag of extinction in H band.  So, we're biased against detecting large A_V bursts at high-z.  Thus, the prior makes sense.  But it can be risky.
+
+photoz_grizyH_confusion0.jpg : uniform priors
+photoz_grizyH_confusion.jpg : decreasing A_V prior
+
+The second plot shows much better photo-z extraction for z=4-6, while the first suffers from a spread in the probabilities to low-z when z is actually high.  There's a kink in the second plot at z>~6 is due to the edge of the Lyman-alpha just falling of the zy band.  This is an artifact of the filter choice.
+
+The reverse also happens: low-z (z~2-4) bursts with large A_V can be incorrectly flagged as z>6 using the prior.  See the nearly identical plots:
+
+prob_z3.jpg : large A_V burst at z=3
+prob_z7.5.jpg : burst at z=7.5
+
+There's a curve for the flat prior and decreasing A_V prior on each plot.
+
+The two plots are about the same, showing how this filter choice has trouble separating low-z and large A_V from high-z.  The way to break the degeneracy (beyond just using the prior) is to observe in J as well as H.  Otherwise, we can just view both calculations and be aware of the issue for anything flagged as z>6 using the prior.

@@ -1,0 +1,79 @@
+from astropy.io import fits as pyfits
+from get_90conf_prob import get_90conf_prob
+from photoz import photoz
+from zscale import zscale
+
+x=photoz()
+self=x
+
+prob=pyfits.getdata('prob.fits')
+prob1 = prob/prob.sum(axis=0)
+
+z1 = 0.*x.z[:71]
+z2 = 0.*x.z[:71]
+for i in range(len(z1)):
+    z1[i],z2[i] = get_90conf_prob(x.z[:71],prob1[i,:71],plim=0.9)
+
+
+a,b=zscale(prob1[:71,:71])
+
+clf()
+imshow(-prob1[:71,:71].clip(a,b),origin='lower',extent=[0,7,0,7],cmap='gray',interpolation=None)
+xlabel("Redshift z",fontsize=14)
+ylabel("Photo-z",fontsize=14)
+plot (x.z[:71],z1,'k:')
+plot (x.z[:71],z2,'k:')
+
+
+
+
+from numpy import newaxis as na
+
+area=1.327
+expos=60.
+self=x
+sys_err=0.1
+Hmag=18.
+
+mag2e = lambda mag,dlamOlam: 15.0919*expos*area*10**(-0.4*(mag-23.9))*dlamOlam
+flx2e = lambda flx,dlamOlam: 15.0919*expos*area*flx*dlamOlam
+
+ii=array([0,1,2,3,4,5,7,8,9,10,12,14,16,18,20,23,26,29,34,38,42,46,50])
+griH=getdata('griH.fits')[20:36,ii].reshape(16*23*3,101)
+zyH=getdata('zyH.fits')[20:36,ii].reshape(16*23*3,101)
+
+H0 = 10**(-0.4*(Hmag-23.9))
+FH = H0
+Fzy = zyH*H0
+Fgri = griH*H0
+
+H_cts = mag2e(Hmag,self.normH*(self.dlam/self.l0))
+H_bg = mag2e(15.3,self.normH*(self.dlam/self.l0))*7
+gri_cts = flx2e(Fgri,self.normgri*(self.dlam/self.l0))
+gri_bg = mag2e(21.,self.normgri*(self.dlam/self.l0))*7
+zy_cts = flx2e(Fzy,self.normzy*(self.dlam/self.l0))
+zy_bg = mag2e(18.5,self.normzy*(self.dlam/self.l0))*7
+
+dFgri = sqrt(gri_cts+gri_bg)*Fgri/gri_cts
+dFzy = sqrt(zy_cts+zy_bg)*Fzy/zy_cts
+dFH = sqrt(H_cts+H_bg)*FH/H_cts
+
+wFgri=1./(dFgri**2+(sys_err*Fgri)**2)
+wFzy=1./(dFzy**2+(sys_err*Fzy)**2)
+wFH=1./(dFH**2+(sys_err*FH)**2)
+
+wN = Fgri**2*wFgri+Fzy**2*wFzy+FH**2*wFH
+N = ( Fgri*self.Fgri*wFgri + Fzy*self.Fzy*wFzy + FH*self.FH*wFH )/wN
+chi2 = ((self.Fgri-N*Fgri)**2*wFgri + (self.Fzy-N*Fzy)**2*wFzy + (self.FH-N*FH)**2*wFH).T
+
+# model i fit to data j
+prob = zeros((x.nz,x.nz),dtype='float64')
+for i in range(x.nz):
+    for j in range(x.nz):
+        wN = Fgri[na,:,i]**2*wFgri[:,na,j] + Fzy[na,:,i]**2*wFzy[:,na,j] + FH*FH*wFH
+        N = ( Fgri[na,:,i]*Fgri[:,na,j]*wFgri[:,na,j] + Fzy[na,:,i]*Fzy[:,na,j]*wFzy[:,na,j] + FH*FH*wFH )/wN
+        c2 = (Fgri[:,na,j]-N*Fgri[na,:,i])**2*wFgri[:,na,j] + (Fzy[:,na,j]-N*Fzy[na,:,i])**2*wFzy[:,na,j] + (FH-N*FH)**2*wFH
+        prob[i,j] = exp(-0.5*c2).sum()
+
+
+
